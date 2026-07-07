@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>여행 환율 계산기</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --key: #17181b;
+      --key-soft: #202124;
+      --key-fn: #2f3032;
+      --accent: #2aa895;
+      --accent-dark: #218b7b;
+      --text: #f4f4f5;
+      --sub: #9b9ba1;
+      --danger: #ff6b6b;
+      --line: rgba(255, 255, 255, 0.12);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--text);
+      background: var(--bg);
+      display: grid;
+      place-items: center;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      border: 0;
+      cursor: pointer;
+      overflow: hidden;
+      position: relative;
+    }
+
+    button:focus {
+      outline: 0;
+    }
+
+    .app {
+      width: min(100%, 420px);
+      min-height: 100vh;
+      background: var(--bg);
+    }
+
+    .calculator {
+      min-height: 100vh;
+      padding: 28px 22px 18px;
+      display: grid;
+      grid-template-rows: auto 1fr auto auto;
+      gap: 12px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      min-height: 34px;
+    }
+
+    .top-btn {
+      width: 34px;
+      height: 34px;
+      color: #e9e9ec;
+      background: transparent;
+      border-radius: 50%;
+      font-size: 21px;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+    }
+
+    .top-btn:active,
+    .key:active,
+    .modal-btn:active {
+      transform: scale(0.94);
+      filter: brightness(1.12);
+    }
+
+    .key:active {
+      box-shadow:
+        inset 0 0 18px rgba(75, 210, 184, 0.2),
+        0 0 14px rgba(75, 210, 184, 0.24);
+    }
+
+    .display {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      text-align: right;
+      min-height: 190px;
+      padding-bottom: 8px;
+    }
+
+    .amount-line {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .expression {
+      min-height: 32px;
+      margin: 0 0 10px;
+      color: #7b7b82;
+      font-size: clamp(22px, 6.8vw, 30px);
+      font-weight: 360;
+      line-height: 1.2;
+      overflow-wrap: anywhere;
+    }
+
+    .currency-symbol {
+      color: #76767c;
+      font-size: clamp(30px, 8vw, 40px);
+      font-weight: 500;
+      text-align: left;
+      line-height: 1;
+    }
+
+    #amount {
+      width: 100%;
+      min-width: 0;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      color: var(--text);
+      background: transparent;
+      font-size: clamp(54px, 16vw, 74px);
+      font-weight: 360;
+      letter-spacing: 0;
+      line-height: 1.08;
+      text-align: right;
+    }
+
+    #amount::placeholder {
+      color: var(--text);
+      opacity: 1;
+    }
+
+    .result {
+      margin: 18px 0 0;
+      color: var(--accent);
+      font-size: clamp(32px, 10vw, 48px);
+      font-weight: 520;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+      transition: color 0.16s ease, text-shadow 0.16s ease, transform 0.16s ease;
+    }
+
+    .result.flash {
+      color: #5ee0ca;
+      text-shadow: 0 0 18px rgba(42, 168, 149, 0.45);
+      transform: translateY(-1px);
+    }
+
+    .formula {
+      min-height: 20px;
+      margin: 8px 0 0;
+      color: #77777d;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .currency-strip {
+      display: grid;
+      grid-template-columns: 1fr 56px 1fr;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .select-wrap {
+      min-width: 0;
+    }
+
+    select {
+      width: 100%;
+      height: 48px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 22px;
+      outline: 0;
+      color: var(--text);
+      background: var(--key-soft);
+      font-size: 14px;
+      font-weight: 760;
+      appearance: none;
+    }
+
+    select option {
+      color: #111;
+    }
+
+    .swap-main {
+      width: 56px;
+      height: 56px;
+      align-self: end;
+      border-radius: 50%;
+      color: #081512;
+      background: var(--accent);
+      font-size: 25px;
+      font-weight: 800;
+    }
+
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 64px);
+      justify-content: space-between;
+      row-gap: 10px;
+      column-gap: 0;
+      padding-top: 2px;
+    }
+
+    .key {
+      aspect-ratio: 1 / 1;
+      width: 64px;
+      border-radius: 50%;
+      color: var(--text);
+      background: var(--key);
+      font-size: clamp(25px, 7.8vw, 34px);
+      font-weight: 390;
+      line-height: 1;
+      overflow: visible;
+      transition: transform 0.1s ease, filter 0.1s ease, box-shadow 0.18s ease;
+    }
+
+    .key::after,
+    .top-btn::after,
+    .swap-main::after,
+    .switch::after,
+    .modal-btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: rgba(255, 255, 255, 0.16);
+      opacity: 0;
+      transform: scale(0.55);
+      pointer-events: none;
+    }
+
+    .key.tap::after,
+    .top-btn.tap::after,
+    .swap-main.tap::after,
+    .switch.tap::after,
+    .modal-btn.tap::after {
+      animation: tap-ripple 0.26s ease-out;
+    }
+
+    .key.tap {
+      animation: key-neon-pop 0.32s ease-out;
+    }
+
+    .key.tap::after {
+      inset: -8px;
+      background: radial-gradient(circle, rgba(84, 220, 195, 0.34) 0%, rgba(84, 220, 195, 0.2) 38%, rgba(84, 220, 195, 0) 72%);
+      box-shadow: 0 0 18px rgba(84, 220, 195, 0.26);
+      animation: key-soft-halo 0.34s ease-out;
+    }
+
+    @keyframes tap-ripple {
+      0% {
+        opacity: 0.5;
+        transform: scale(0.45);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.18);
+      }
+    }
+
+    @keyframes key-soft-halo {
+      0% {
+        opacity: 0.85;
+        transform: scale(0.78);
+      }
+      55% {
+        opacity: 0.55;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(1.16);
+      }
+    }
+
+    @keyframes key-neon-pop {
+      0% {
+        box-shadow: 0 0 0 rgba(42, 168, 149, 0);
+      }
+      35% {
+        box-shadow:
+          inset 0 0 20px rgba(84, 220, 195, 0.16),
+          0 0 14px rgba(84, 220, 195, 0.22);
+      }
+      100% {
+        box-shadow: 0 0 0 rgba(42, 168, 149, 0);
+      }
+    }
+
+    .key.fn {
+      color: #ff7474;
+      background: var(--key);
+      font-size: clamp(19px, 5.6vw, 25px);
+      font-weight: 560;
+    }
+
+    .key.operator {
+      background: var(--key-fn);
+      color: #e6e6e8;
+      font-size: clamp(28px, 8vw, 36px);
+      font-weight: 430;
+    }
+
+    .key.equal {
+      background: var(--accent);
+      color: white;
+      font-size: clamp(30px, 8.4vw, 38px);
+      font-weight: 520;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: end;
+      justify-content: center;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.68);
+      z-index: 20;
+    }
+
+    .modal.open {
+      display: flex;
+    }
+
+    .sheet {
+      width: min(100%, 420px);
+      padding: 20px;
+      border-radius: 28px 28px 24px 24px;
+      background: #16171a;
+      border: 1px solid var(--line);
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.54);
+      animation: rise 0.16s ease-out;
+    }
+
+    @keyframes rise {
+      from {
+        transform: translateY(18px);
+        opacity: 0.75;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .sheet-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .sheet-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 760;
+    }
+
+    .sheet-info {
+      margin: 0;
+      color: var(--sub);
+      font-size: 13px;
+      line-height: 1.48;
+    }
+
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 18px;
+      background: #202124;
+    }
+
+    .setting-name {
+      display: block;
+      font-size: 15px;
+      font-weight: 760;
+    }
+
+    .setting-desc {
+      display: block;
+      margin-top: 3px;
+      color: var(--sub);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .switch {
+      width: 52px;
+      height: 30px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: #33343a;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      transition: background 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .switch-knob {
+      display: block;
+      width: 24px;
+      height: 24px;
+      margin: 3px;
+      border-radius: 50%;
+      background: #d8d8dc;
+      transition: transform 0.16s ease, background 0.16s ease;
+    }
+
+    .switch.on {
+      background: var(--accent);
+      box-shadow: 0 0 16px rgba(42, 168, 149, 0.22);
+    }
+
+    .switch.on .switch-knob {
+      transform: translateX(22px);
+      background: white;
+    }
+
+    .rate-list {
+      display: grid;
+      gap: 9px;
+      margin-top: 16px;
+    }
+
+    .rate-row {
+      display: grid;
+      grid-template-columns: 76px 1fr;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 18px;
+      background: #202124;
+    }
+
+    .rate-code {
+      display: block;
+      font-size: 15px;
+      font-weight: 780;
+    }
+
+    .rate-name {
+      display: block;
+      margin-top: 2px;
+      color: var(--sub);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .rate-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      outline: 0;
+      color: var(--text);
+      background: #08090b;
+      text-align: right;
+      font-weight: 740;
+    }
+
+    .rate-input:focus,
+    select:focus {
+      outline: 2px solid rgba(42, 168, 149, 0.26);
+      outline-offset: 2px;
+    }
+
+    .error {
+      min-height: 18px;
+      margin: 10px 0 0;
+      color: var(--danger);
+      font-size: 12px;
+      text-align: right;
+    }
+
+    .sheet-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .modal-btn {
+      min-height: 50px;
+      border-radius: 999px;
+      color: var(--text);
+      background: #2a2b2f;
+      font-weight: 780;
+      transition: transform 0.1s ease, filter 0.1s ease;
+    }
+
+    .modal-btn.save {
+      color: white;
+      background: var(--accent);
+    }
+
+    @media (max-width: 390px) {
+      .calculator {
+        padding: 26px 22px 14px;
+        gap: 10px;
+      }
+
+      .display {
+        min-height: 180px;
+      }
+
+      .keypad {
+        grid-template-columns: repeat(4, 62px);
+        row-gap: 9px;
+      }
+
+      .key {
+        width: 62px;
+      }
+    }
+
+    @media (min-width: 700px) {
+      body {
+        background: #111;
+      }
+
+      .app {
+        min-height: 860px;
+        border-radius: 34px;
+        overflow: hidden;
+        box-shadow: 0 26px 80px rgba(0, 0, 0, 0.55);
+      }
+
+      .calculator {
+        min-height: 860px;
+      }
+
+      .display {
+        min-height: 260px;
+      }
+
+      .keypad {
+        grid-template-columns: repeat(4, 70px);
+        row-gap: 12px;
+      }
+
+      .key {
+        width: 70px;
+      }
+
+      .modal {
+        align-items: center;
+      }
+
+      .sheet {
+        border-radius: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" aria-label="여행 환율 계산기">
+    <section class="calculator">
+      <header class="topbar">
+        <button class="top-btn" id="openSettings" type="button" aria-label="환율 설정" title="환율 설정">⚙</button>
+      </header>
+
+      <section class="display" aria-live="polite">
+        <p class="expression" id="expression"></p>
+        <div class="amount-line">
+          <span class="currency-symbol" id="fromSymbol">₩</span>
+          <input id="amount" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="변환할 금액" />
+        </div>
+        <p class="result" id="result">₫0</p>
+        <p class="formula" id="formula">금액을 입력해 주세요.</p>
+      </section>
+
+      <section class="currency-strip" aria-label="통화 선택">
+        <div class="select-wrap">
+          <select id="fromCurrency"></select>
+        </div>
+        <button class="swap-main" type="button" aria-label="통화 스왑" title="통화 스왑" data-action="swap">⇄</button>
+        <div class="select-wrap">
+          <select id="toCurrency"></select>
+        </div>
+      </section>
+
+      <section class="keypad" aria-label="숫자 키패드">
+        <button class="key fn" type="button" data-action="clear">C</button>
+        <button class="key fn" type="button" data-action="backspace">⌫</button>
+        <button class="key operator" type="button" data-operator="%">%</button>
+        <button class="key operator" type="button" data-operator="÷">÷</button>
+
+        <button class="key" type="button" data-key="7">7</button>
+        <button class="key" type="button" data-key="8">8</button>
+        <button class="key" type="button" data-key="9">9</button>
+        <button class="key operator" type="button" data-operator="×">×</button>
+
+        <button class="key" type="button" data-key="4">4</button>
+        <button class="key" type="button" data-key="5">5</button>
+        <button class="key" type="button" data-key="6">6</button>
+        <button class="key operator" type="button" data-operator="−">−</button>
+
+        <button class="key" type="button" data-key="1">1</button>
+        <button class="key" type="button" data-key="2">2</button>
+        <button class="key" type="button" data-key="3">3</button>
+        <button class="key operator" type="button" data-operator="+">+</button>
+
+        <button class="key" type="button" data-action="doubleZero">00</button>
+        <button class="key" type="button" data-key="0">0</button>
+        <button class="key" type="button" data-key=".">.</button>
+        <button class="key equal" type="button" data-action="calculate">=</button>
+      </section>
+    </section>
+  </main>
+
+  <div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <section class="sheet">
+      <div class="sheet-head">
+        <h2 class="sheet-title" id="settingsTitle">환율 설정</h2>
+        <button class="top-btn" id="closeSettings" type="button" aria-label="설정 닫기">×</button>
+      </div>
+      <p class="sheet-info">API 없이 수동 환율 기준으로 계산됩니다. 각 통화 1단위가 몇 KRW인지 입력하세요.</p>
+      <div class="setting-row">
+        <div>
+          <span class="setting-name">진동</span>
+          <span class="setting-desc">숫자패드와 버튼을 누를 때 짧게 진동합니다.</span>
+        </div>
+        <button class="switch" id="hapticToggle" type="button" role="switch" aria-checked="true" aria-label="진동 끄기">
+          <span class="switch-knob"></span>
+        </button>
+      </div>
+      <div class="rate-list" id="rateList"></div>
+      <p class="error" id="rateError"></p>
+      <div class="sheet-actions">
+        <button class="modal-btn" id="resetRates" type="button">기본값</button>
+        <button class="modal-btn save" id="saveRates" type="button">저장</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "travelCurrencyCalculator";
+    const DEFAULT_RATES = {
+      KRW: 1,
+      VND: 0.058,
+      THB: 45.4,
+      USD: 1512
+    };
+
+    const CURRENCIES = {
+      KRW: { name: "대한민국 원", symbol: "₩", decimals: 0 },
+      VND: { name: "베트남 동", symbol: "₫", decimals: 0 },
+      THB: { name: "태국 바트", symbol: "฿", decimals: 2 },
+      USD: { name: "미국 달러", symbol: "$", decimals: 2 }
+    };
+
+    const state = {
+      amount: "",
+      from: "KRW",
+      to: "VND",
+      rates: { ...DEFAULT_RATES },
+      haptics: true,
+      pendingValue: null,
+      operator: null,
+      waitingForNext: false,
+      calcText: "",
+      expressionText: "",
+      percentApplied: false
+    };
+
+    const amountInput = document.getElementById("amount");
+    const fromSelect = document.getElementById("fromCurrency");
+    const toSelect = document.getElementById("toCurrency");
+    const fromSymbol = document.getElementById("fromSymbol");
+    const expressionEl = document.getElementById("expression");
+    const resultEl = document.getElementById("result");
+    const formulaEl = document.getElementById("formula");
+    const hapticToggle = document.getElementById("hapticToggle");
+    const modal = document.getElementById("settingsModal");
+    const rateList = document.getElementById("rateList");
+    const rateError = document.getElementById("rateError");
+    let lastResultText = "";
+
+    function init() {
+      loadState();
+      renderCurrencyOptions();
+      renderRateInputs();
+      bindEvents();
+      syncControls();
+      calculate();
+    }
+
+    function loadState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved) return;
+
+        state.from = CURRENCIES[saved.from] ? saved.from : state.from;
+        state.to = CURRENCIES[saved.to] ? saved.to : state.to;
+        state.rates = { ...DEFAULT_RATES, ...sanitizeRates(saved.rates || {}) };
+        state.haptics = typeof saved.haptics === "boolean" ? saved.haptics : state.haptics;
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        from: state.from,
+        to: state.to,
+        rates: state.rates,
+        haptics: state.haptics
+      }));
+    }
+
+    function sanitizeRates(rates) {
+      return Object.fromEntries(
+        Object.keys(CURRENCIES).map((code) => {
+          const value = Number(rates[code]);
+          return [code, Number.isFinite(value) && value > 0 ? value : DEFAULT_RATES[code]];
+        })
+      );
+    }
+
+    function renderCurrencyOptions() {
+      const options = Object.entries(CURRENCIES)
+        .map(([code, info]) => `<option value="${code}">${code} · ${info.name}</option>`)
+        .join("");
+
+      fromSelect.innerHTML = options;
+      toSelect.innerHTML = options;
+    }
+
+    function renderRateInputs() {
+      rateList.innerHTML = Object.entries(CURRENCIES).map(([code, info]) => `
+        <div class="rate-row">
+          <div>
+            <span class="rate-code">${code}</span>
+            <span class="rate-name">${info.name}</span>
+          </div>
+          <input class="rate-input" data-code="${code}" inputmode="decimal" value="${state.rates[code]}" aria-label="${code} KRW 기준 환율" />
+        </div>
+      `).join("");
+    }
+
+    function bindEvents() {
+      amountInput.addEventListener("input", handleTypedAmount);
+      fromSelect.addEventListener("change", () => updateCurrency("from", fromSelect.value));
+      toSelect.addEventListener("change", () => updateCurrency("to", toSelect.value));
+
+      document.querySelectorAll("[data-key]").forEach((button) => {
+        button.addEventListener("click", () => {
+          playFeedback(button);
+          appendKey(button.dataset.key);
+        });
+      });
+
+      document.querySelectorAll("[data-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          playFeedback(button);
+          runAction(button.dataset.action);
+        });
+      });
+
+      document.querySelectorAll("[data-operator]").forEach((button) => {
+        button.addEventListener("click", () => {
+          playFeedback(button);
+          handleOperator(button.dataset.operator);
+        });
+      });
+
+      document.getElementById("openSettings").addEventListener("click", (event) => {
+        playFeedback(event.currentTarget);
+        openSettings();
+      });
+      hapticToggle.addEventListener("click", (event) => {
+        triggerRipple(event.currentTarget);
+        state.haptics = !state.haptics;
+        syncHapticToggle();
+        saveState();
+        if (state.haptics) triggerHaptic(true);
+      });
+      document.getElementById("closeSettings").addEventListener("click", (event) => {
+        playFeedback(event.currentTarget);
+        closeSettings();
+      });
+      document.getElementById("saveRates").addEventListener("click", (event) => {
+        playFeedback(event.currentTarget);
+        saveRatesFromModal();
+      });
+      document.getElementById("resetRates").addEventListener("click", (event) => {
+        playFeedback(event.currentTarget);
+        resetRates();
+      });
+
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) closeSettings();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && modal.classList.contains("open")) closeSettings();
+      });
+    }
+
+    function playFeedback(button) {
+      triggerHaptic();
+      triggerRipple(button);
+    }
+
+    function triggerHaptic(force = false) {
+      if ((force || state.haptics) && typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate(12);
+      }
+    }
+
+    function triggerRipple(button) {
+      if (!button) return;
+      button.classList.remove("tap");
+      void button.offsetWidth;
+      button.classList.add("tap");
+    }
+
+    function pulseResult() {
+      resultEl.classList.remove("flash");
+      void resultEl.offsetWidth;
+      resultEl.classList.add("flash");
+    }
+
+    function setResultText(text) {
+      resultEl.textContent = text;
+      if (text !== lastResultText) {
+        lastResultText = text;
+        pulseResult();
+      }
+    }
+
+    function updateExpression() {
+      expressionEl.textContent = getExpressionText();
+    }
+
+    function getExpressionText() {
+      if (state.pendingValue !== null && state.operator) {
+        const prefix = state.expressionText || `${formatNumber(state.pendingValue, 2)} ${state.operator}`;
+        if (state.percentApplied || state.waitingForNext || !state.amount) return prefix;
+        return `${prefix} ${formatNumber(Number(state.amount), 2)}`;
+      }
+
+      return state.expressionText || state.calcText;
+    }
+
+    function handleTypedAmount() {
+      state.pendingValue = null;
+      state.operator = null;
+      state.waitingForNext = false;
+      state.calcText = "";
+      state.expressionText = "";
+      state.percentApplied = false;
+      setAmount(cleanDecimal(amountInput.value), false);
+      moveCursorToEnd(amountInput);
+    }
+
+    function appendKey(key) {
+      if (state.waitingForNext) {
+        state.amount = "";
+        state.waitingForNext = false;
+        if (state.pendingValue === null || !state.operator) {
+          state.calcText = "";
+          state.expressionText = "";
+          state.percentApplied = false;
+        }
+      }
+
+      if (key === "." && state.amount.includes(".")) return;
+      if (key === "." && !state.amount) return setAmount("0.");
+      if (state.amount === "0" && key !== ".") return setAmount(key);
+      setAmount(`${state.amount}${key}`);
+    }
+
+    function runAction(action) {
+      if (action === "clear") return clearAll();
+      if (action === "backspace") return backspace();
+      if (action === "doubleZero") return appendDoubleZero();
+      if (action === "swap") return swapCurrencies();
+      if (action === "calculate") return evaluateArithmetic();
+    }
+
+    function appendDoubleZero() {
+      if (state.waitingForNext) {
+        state.amount = "";
+        state.waitingForNext = false;
+      }
+
+      if (!state.amount || state.amount === "0") return setAmount("0");
+      setAmount(`${state.amount}00`);
+    }
+
+    function clearAll() {
+      state.pendingValue = null;
+      state.operator = null;
+      state.waitingForNext = false;
+      state.calcText = "";
+      state.expressionText = "";
+      state.percentApplied = false;
+      setAmount("");
+    }
+
+    function backspace() {
+      if (state.waitingForNext) return clearAll();
+      setAmount(state.amount.slice(0, -1));
+    }
+
+    function handleOperator(operator) {
+      const current = parseCurrentAmount();
+      if (current === null) return;
+
+      if (operator === "%") {
+        if (state.pendingValue !== null && state.operator && !state.waitingForNext) {
+          const percentValue = getPercentValue(state.pendingValue, current, state.operator);
+          const prefix = state.expressionText || `${formatNumber(state.pendingValue, 2)} ${state.operator}`;
+          state.expressionText = `${prefix} ${formatNumber(current, 2)}%`;
+          state.calcText = state.expressionText;
+          state.percentApplied = true;
+          state.waitingForNext = false;
+          return setAmount(numberToAmount(percentValue));
+        }
+
+        state.calcText = `${formatNumber(current, 2)}%`;
+        state.expressionText = state.calcText;
+        state.percentApplied = true;
+        state.pendingValue = null;
+        state.operator = null;
+        state.waitingForNext = true;
+        return setAmount(numberToAmount(current / 100));
+      }
+
+      if (state.pendingValue !== null && state.operator && !state.waitingForNext) {
+        const prefix = state.expressionText || `${formatNumber(state.pendingValue, 2)} ${state.operator}`;
+        const nextValue = compute(state.pendingValue, current, state.operator);
+        if (nextValue === null) return showMathError();
+        state.pendingValue = nextValue;
+        const rightText = state.percentApplied ? "" : ` ${formatNumber(current, 2)}`;
+        state.expressionText = `${prefix}${rightText} ${operator}`;
+        state.percentApplied = false;
+        setAmount(numberToAmount(nextValue));
+      } else {
+        state.pendingValue = current;
+        state.expressionText = `${formatNumber(state.pendingValue, 2)} ${operator}`;
+        state.percentApplied = false;
+      }
+
+      state.operator = operator;
+      state.waitingForNext = true;
+      state.calcText = `${formatNumber(state.pendingValue, 2)} ${operator}`;
+      calculate();
+    }
+
+    function evaluateArithmetic() {
+      const current = parseCurrentAmount();
+      if (current === null || state.pendingValue === null || !state.operator) return calculate();
+
+      const expression = getExpressionText();
+      const nextValue = evaluateExpression(expression);
+      if (nextValue === null) {
+        state.calcText = `${expression} =`;
+        state.expressionText = state.calcText;
+        return showMathError();
+      }
+
+      state.calcText = `${expression} =`;
+      state.expressionText = state.calcText;
+      state.percentApplied = false;
+      state.pendingValue = null;
+      state.operator = null;
+      state.waitingForNext = true;
+      setAmount(numberToAmount(nextValue));
+    }
+
+    function evaluateExpression(expression) {
+      const tokens = expression.split(/\s+/).filter(Boolean);
+      if (tokens.length === 0) return null;
+
+      const values = [];
+      const operators = [];
+
+      for (const token of tokens) {
+        if (isOperator(token)) {
+          operators.push(token);
+        } else {
+          const previousOperator = operators[operators.length - 1];
+          const baseValue = values[values.length - 1] ?? 0;
+          const value = parseExpressionNumber(token, previousOperator, baseValue);
+          if (value === null) return null;
+          values.push(value);
+        }
+      }
+
+      if (values.length === 1) return values[0];
+      if (operators.length !== values.length - 1) return null;
+
+      const foldedValues = [values[0]];
+      const foldedOperators = [];
+
+      for (let i = 0; i < operators.length; i += 1) {
+        const operator = operators[i];
+        const right = values[i + 1];
+
+        if (operator === "×" || operator === "÷") {
+          const left = foldedValues.pop();
+          const result = compute(left, right, operator);
+          if (result === null) return null;
+          foldedValues.push(result);
+        } else {
+          foldedOperators.push(operator);
+          foldedValues.push(right);
+        }
+      }
+
+      return foldedOperators.reduce((total, operator, index) => {
+        return compute(total, foldedValues[index + 1], operator);
+      }, foldedValues[0]);
+    }
+
+    function parseExpressionNumber(token, previousOperator, baseValue) {
+      const isPercent = token.endsWith("%");
+      const number = Number(token.replace(/,/g, "").replace("%", ""));
+      if (!Number.isFinite(number)) return null;
+
+      if (!isPercent) return number;
+      if (previousOperator === "+" || previousOperator === "−") return baseValue * number / 100;
+      return number / 100;
+    }
+
+    function isOperator(token) {
+      return ["+", "−", "×", "÷"].includes(token);
+    }
+
+    function getPercentValue(left, right, operator) {
+      if (operator === "+" || operator === "−") return left * right / 100;
+      return right / 100;
+    }
+
+    function compute(left, right, operator) {
+      if (operator === "+") return left + right;
+      if (operator === "−") return left - right;
+      if (operator === "×") return left * right;
+      if (operator === "÷") return right === 0 ? null : left / right;
+      return right;
+    }
+
+    function parseCurrentAmount() {
+      const value = Number(state.amount);
+      return state.amount && Number.isFinite(value) ? value : null;
+    }
+
+    function numberToAmount(value) {
+      if (!Number.isFinite(value)) return "";
+      return String(Number(value.toFixed(10)));
+    }
+
+    function showMathError() {
+      state.pendingValue = null;
+      state.operator = null;
+      state.waitingForNext = true;
+      state.percentApplied = false;
+      state.amount = "";
+      amountInput.value = "";
+      updateExpression();
+      setResultText("오류");
+      formulaEl.textContent = "0으로 나눌 수 없습니다.";
+    }
+
+    function swapCurrencies() {
+      [state.from, state.to] = [state.to, state.from];
+      syncControls();
+      saveState();
+      calculate();
+    }
+
+    function setAmount(value, shouldFormat = true) {
+      state.amount = cleanDecimal(value);
+      amountInput.value = shouldFormat ? formatInputNumber(state.amount) : formatInputNumber(state.amount);
+      calculate();
+    }
+
+    // 숫자와 소수점 하나만 허용해서 잘못된 입력을 줄입니다.
+    function cleanDecimal(value) {
+      const normalized = String(value).replace(/,/g, "").replace(/[^\d.]/g, "");
+      const parts = normalized.split(".");
+      if (parts.length === 1) return parts[0].replace(/^0+(?=\d)/, "");
+      const intPart = parts[0].replace(/^0+(?=\d)/, "") || "0";
+      return `${intPart}.${parts.slice(1).join("")}`;
+    }
+
+    function formatInputNumber(value) {
+      if (!value) return "";
+      const [intPart, decimalPart] = String(value).split(".");
+      const intText = intPart ? Number(intPart).toLocaleString("en-US") : "0";
+      return decimalPart !== undefined ? `${intText}.${decimalPart}` : intText;
+    }
+
+    function updateCurrency(type, value) {
+      state[type] = value;
+      syncControls();
+      saveState();
+      calculate();
+    }
+
+    function syncControls() {
+      fromSelect.value = state.from;
+      toSelect.value = state.to;
+      fromSymbol.textContent = CURRENCIES[state.from].symbol;
+      syncHapticToggle();
+    }
+
+    function syncHapticToggle() {
+      hapticToggle.classList.toggle("on", state.haptics);
+      hapticToggle.setAttribute("aria-label", state.haptics ? "진동 끄기" : "진동 켜기");
+      hapticToggle.setAttribute("aria-checked", String(state.haptics));
+      hapticToggle.title = state.haptics ? "진동 켜짐" : "진동 꺼짐";
+    }
+
+    function calculate() {
+      const amount = Number(state.amount);
+
+      if (!state.amount || !Number.isFinite(amount)) {
+        updateExpression();
+        setResultText(`${CURRENCIES[state.to].symbol}0`);
+        formulaEl.textContent = "금액을 입력해 주세요.";
+        return;
+      }
+
+      const fromRate = state.rates[state.from];
+      const toRate = state.rates[state.to];
+      const krwValue = amount * fromRate;
+      const converted = krwValue / toRate;
+      const directRate = fromRate / toRate;
+
+      updateExpression();
+      setResultText(formatCurrency(converted, state.to));
+      formulaEl.textContent = `${formatNumber(amount, 2)} ${state.from} × ${formatNumber(directRate, 6)} = ${formatNumber(converted, CURRENCIES[state.to].decimals)} ${state.to}`;
+    }
+
+    function formatCurrency(value, code) {
+      const info = CURRENCIES[code];
+      return `${info.symbol}${formatNumber(value, info.decimals)}`;
+    }
+
+    function formatNumber(value, decimals) {
+      return Number(value).toLocaleString("en-US", {
+        minimumFractionDigits: decimals === 0 ? 0 : 0,
+        maximumFractionDigits: decimals
+      });
+    }
+
+    function openSettings() {
+      renderRateInputs();
+      rateError.textContent = "";
+      modal.classList.add("open");
+    }
+
+    function closeSettings() {
+      modal.classList.remove("open");
+    }
+
+    function saveRatesFromModal() {
+      const nextRates = {};
+      const inputs = [...modal.querySelectorAll(".rate-input")];
+
+      for (const input of inputs) {
+        const code = input.dataset.code;
+        const value = Number(cleanDecimal(input.value));
+        if (!Number.isFinite(value) || value <= 0) {
+          rateError.textContent = `${code} 환율은 0보다 큰 숫자로 입력해 주세요.`;
+          input.focus();
+          return;
+        }
+        nextRates[code] = value;
+      }
+
+      state.rates = nextRates;
+      saveState();
+      calculate();
+      closeSettings();
+    }
+
+    function resetRates() {
+      state.rates = { ...DEFAULT_RATES };
+      renderRateInputs();
+      saveState();
+      calculate();
+      rateError.textContent = "기본 환율로 초기화되었습니다.";
+    }
+
+    function moveCursorToEnd(input) {
+      requestAnimationFrame(() => {
+        const end = input.value.length;
+        input.setSelectionRange(end, end);
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>
