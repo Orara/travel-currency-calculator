@@ -222,7 +222,6 @@
 
     .keypad {
       display: grid;
-      position: relative;
       grid-template-columns: repeat(4, 64px);
       justify-content: space-between;
       row-gap: 10px;
@@ -240,7 +239,7 @@
       font-weight: 390;
       line-height: 1;
       overflow: visible;
-      z-index: 3;
+      z-index: 0;
       transition: transform 0.1s ease, filter 0.1s ease, box-shadow 0.18s ease;
     }
 
@@ -267,7 +266,7 @@
     }
 
     .key.tap {
-      z-index: 4;
+      z-index: 3;
       animation: key-symbol-flash 0.28s ease-out;
     }
 
@@ -283,16 +282,15 @@
       top: var(--halo-top);
       border-radius: 50%;
       pointer-events: none;
-      z-index: 2;
+      z-index: 1;
       background:
         radial-gradient(circle,
-          rgba(87, 224, 200, 0) 0%,
-          rgba(87, 224, 200, 0) 52%,
-          rgba(87, 224, 200, 0.38) 63%,
-          rgba(87, 224, 200, 0.22) 74%,
-          rgba(87, 224, 200, 0) 88%);
-      filter: blur(0.35px);
-      animation: floating-key-halo 0.3s ease-out forwards;
+          rgba(255, 255, 255, 0.18) 0%,
+          rgba(87, 224, 200, 0.18) 43%,
+          rgba(87, 224, 200, 0.07) 62%,
+          rgba(87, 224, 200, 0) 78%);
+      filter: blur(0.2px);
+      animation: floating-key-halo 0.28s ease-out forwards;
       will-change: transform, opacity;
     }
 
@@ -322,15 +320,27 @@
     @keyframes floating-key-halo {
       0% {
         opacity: 0;
-        transform: scale(0.92);
+        transform: scale(0.8);
       }
       34% {
-        opacity: 0.84;
+        opacity: 0.62;
         transform: scale(1.02);
       }
       100% {
         opacity: 0;
-        transform: scale(1.1);
+        transform: scale(1.13);
+      }
+    }
+
+    @keyframes mobile-key-outer-glow {
+      0% {
+        box-shadow: 0 0 0 rgba(87, 224, 200, 0);
+      }
+      42% {
+        box-shadow: 0 0 18px 5px rgba(87, 224, 200, 0.24);
+      }
+      100% {
+        box-shadow: 0 0 0 rgba(87, 224, 200, 0);
       }
     }
 
@@ -562,6 +572,14 @@
 
       .key {
         width: 62px;
+      }
+    }
+
+    @media (max-width: 700px), (hover: none), (pointer: coarse) {
+      .key.tap {
+        animation:
+          key-symbol-flash 0.28s ease-out,
+          mobile-key-outer-glow 0.28s ease-out;
       }
     }
 
@@ -871,7 +889,7 @@
     function createFloatingHalo(button) {
       const rect = button.getBoundingClientRect();
       const halo = document.createElement("span");
-      const size = Math.round(rect.width + 44);
+      const size = Math.round(rect.width + 30);
       halo.className = "touch-halo";
       halo.style.setProperty("--halo-size", `${size}px`);
       halo.style.setProperty("--halo-left", `${Math.round(rect.left + rect.width / 2 - size / 2)}px`);
