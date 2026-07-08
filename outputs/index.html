@@ -51,6 +51,8 @@
       cursor: pointer;
       overflow: hidden;
       position: relative;
+      touch-action: manipulation;
+      user-select: none;
     }
 
     button:focus {
@@ -148,11 +150,17 @@
       letter-spacing: 0;
       line-height: 1.08;
       text-align: right;
+      transform-origin: right center;
     }
 
     #amount::placeholder {
       color: var(--text);
       opacity: 1;
+    }
+
+    #amount.amount-pop {
+      animation: amount-pop 0.16s ease-out;
+      will-change: transform;
     }
 
     .result {
@@ -240,6 +248,7 @@
       line-height: 1;
       overflow: visible;
       z-index: 0;
+      will-change: transform, filter;
       transition: transform 0.1s ease, filter 0.1s ease, box-shadow 0.18s ease;
     }
 
@@ -315,6 +324,18 @@
       }
       100% {
         color: inherit;
+      }
+    }
+
+    @keyframes amount-pop {
+      0% {
+        transform: scale(0.985);
+      }
+      55% {
+        transform: scale(1.028);
+      }
+      100% {
+        transform: scale(1);
       }
     }
 
@@ -848,46 +869,46 @@
       toSelect.addEventListener("change", () => updateCurrency("to", toSelect.value));
 
       document.querySelectorAll("[data-key]").forEach((button) => {
-        button.addEventListener("click", () => {
-          playFeedback(button);
+        onPress(button, () => {
           appendKey(button.dataset.key);
+          playFeedback(button);
         });
       });
 
       document.querySelectorAll("[data-action]").forEach((button) => {
-        button.addEventListener("click", () => {
-          playFeedback(button);
+        onPress(button, () => {
           runAction(button.dataset.action);
+          playFeedback(button);
         });
       });
 
       document.querySelectorAll("[data-operator]").forEach((button) => {
-        button.addEventListener("click", () => {
-          playFeedback(button);
+        onPress(button, () => {
           handleOperator(button.dataset.operator);
+          playFeedback(button);
         });
       });
 
-      document.getElementById("openSettings").addEventListener("click", (event) => {
+      onPress(document.getElementById("openSettings"), (event) => {
         playFeedback(event.currentTarget);
         openSettings();
       });
-      hapticToggle.addEventListener("click", (event) => {
+      onPress(hapticToggle, (event) => {
         triggerRipple(event.currentTarget);
         state.haptics = !state.haptics;
         syncHapticToggle();
         saveState();
         if (state.haptics) triggerHaptic(true);
       });
-      document.getElementById("closeSettings").addEventListener("click", (event) => {
+      onPress(document.getElementById("closeSettings"), (event) => {
         playFeedback(event.currentTarget);
         closeSettings();
       });
-      document.getElementById("saveRates").addEventListener("click", (event) => {
+      onPress(document.getElementById("saveRates"), (event) => {
         playFeedback(event.currentTarget);
         saveRatesFromModal();
       });
-      document.getElementById("resetRates").addEventListener("click", (event) => {
+      onPress(document.getElementById("resetRates"), (event) => {
         playFeedback(event.currentTarget);
         resetRates();
       });
@@ -898,6 +919,25 @@
 
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && modal.classList.contains("open")) closeSettings();
+      });
+    }
+
+    function onPress(element, handler) {
+      let lastPointerAt = 0;
+
+      if (window.PointerEvent) {
+        element.addEventListener("pointerdown", (event) => {
+          if (event.pointerType === "mouse" && event.button !== 0) return;
+          event.preventDefault();
+          lastPointerAt = Date.now();
+          handler(event);
+        });
+      }
+
+      element.addEventListener("click", (event) => {
+        const recentlyHandledByPointer = Date.now() - lastPointerAt < 500;
+        if (recentlyHandledByPointer && event.detail !== 0) return;
+        handler(event);
       });
     }
 
@@ -915,9 +955,10 @@
     function triggerRipple(button) {
       if (!button) return;
       button.classList.remove("tap");
-      void button.offsetWidth;
-      button.classList.add("tap");
-      if (button.classList.contains("key")) createFloatingHalo(button);
+      requestAnimationFrame(() => {
+        button.classList.add("tap");
+        if (button.classList.contains("key")) createFloatingHalo(button);
+      });
     }
 
     function createFloatingHalo(button) {
@@ -935,8 +976,7 @@
 
     function pulseResult() {
       resultEl.classList.remove("flash");
-      void resultEl.offsetWidth;
-      resultEl.classList.add("flash");
+      requestAnimationFrame(() => resultEl.classList.add("flash"));
     }
 
     function setResultText(text) {
@@ -1190,9 +1230,16 @@
     }
 
     function setAmount(value, shouldFormat = true) {
+      const previous = state.amount;
       state.amount = cleanDecimal(value);
       amountInput.value = shouldFormat ? formatInputNumber(state.amount) : formatInputNumber(state.amount);
+      if (state.amount !== previous) pulseAmount();
       calculate();
+    }
+
+    function pulseAmount() {
+      amountInput.classList.remove("amount-pop");
+      requestAnimationFrame(() => amountInput.classList.add("amount-pop"));
     }
 
     // 숫자와 소수점 하나만 허용해서 잘못된 입력을 줄입니다.
