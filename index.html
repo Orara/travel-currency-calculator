@@ -98,9 +98,7 @@
     }
 
     .key:active {
-      box-shadow:
-        inset 0 0 18px rgba(75, 210, 184, 0.2),
-        0 0 14px rgba(75, 210, 184, 0.24);
+      box-shadow: none;
     }
 
     .display {
@@ -260,7 +258,6 @@
       pointer-events: none;
     }
 
-    .key.tap::after,
     .top-btn.tap::after,
     .swap-main.tap::after,
     .switch.tap::after,
@@ -269,15 +266,12 @@
     }
 
     .key.tap {
-      z-index: 2;
-      animation: key-soft-press 0.28s ease-out;
+      z-index: 3;
+      animation: key-symbol-flash 0.28s ease-out;
     }
 
     .key.tap::after {
-      inset: -10px;
-      background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, rgba(84, 220, 195, 0.16) 46%, rgba(84, 220, 195, 0.05) 63%, rgba(84, 220, 195, 0) 78%);
-      box-shadow: none;
-      animation: key-soft-halo 0.28s ease-out;
+      animation: none;
     }
 
     .touch-halo {
@@ -288,7 +282,7 @@
       top: var(--halo-top);
       border-radius: 50%;
       pointer-events: none;
-      z-index: 4;
+      z-index: 1;
       background:
         radial-gradient(circle,
           rgba(255, 255, 255, 0.18) 0%,
@@ -311,32 +305,15 @@
       }
     }
 
-    @keyframes key-soft-halo {
+    @keyframes key-symbol-flash {
       0% {
-        opacity: 0.62;
-        transform: scale(0.78);
+        color: #57e0c8;
       }
-      42% {
-        opacity: 0.5;
-        transform: scale(1.02);
+      48% {
+        color: #57e0c8;
       }
       100% {
-        opacity: 0;
-        transform: scale(1.1);
-      }
-    }
-
-    @keyframes key-soft-press {
-      0% {
-        box-shadow: 0 0 0 rgba(42, 168, 149, 0);
-      }
-      36% {
-        box-shadow:
-          inset 0 0 14px rgba(255, 255, 255, 0.1),
-          0 0 12px rgba(84, 220, 195, 0.16);
-      }
-      100% {
-        box-shadow: 0 0 0 rgba(42, 168, 149, 0);
+        color: inherit;
       }
     }
 
