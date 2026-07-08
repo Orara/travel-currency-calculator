@@ -267,9 +267,7 @@
 
     .key.tap {
       z-index: 3;
-      animation:
-        key-symbol-flash 0.28s ease-out,
-        key-press-surface 0.28s ease-out;
+      animation: key-symbol-flash 0.28s ease-out;
     }
 
     .key.tap::after {
@@ -317,22 +315,6 @@
       }
       100% {
         color: inherit;
-      }
-    }
-
-    @keyframes key-press-surface {
-      0% {
-        background-image:
-          radial-gradient(circle at 64% 14%, rgba(238, 255, 251, 0.2) 0%, rgba(111, 238, 215, 0.12) 22%, rgba(111, 238, 215, 0) 42%),
-          conic-gradient(from 314deg, rgba(87, 224, 200, 0) 0deg, rgba(87, 224, 200, 0.18) 28deg, rgba(238, 255, 251, 0.14) 48deg, rgba(87, 224, 200, 0) 76deg);
-      }
-      48% {
-        background-image:
-          radial-gradient(circle at 64% 14%, rgba(238, 255, 251, 0.22) 0%, rgba(111, 238, 215, 0.14) 22%, rgba(111, 238, 215, 0) 42%),
-          conic-gradient(from 314deg, rgba(87, 224, 200, 0) 0deg, rgba(87, 224, 200, 0.2) 28deg, rgba(238, 255, 251, 0.16) 48deg, rgba(87, 224, 200, 0) 76deg);
-      }
-      100% {
-        background-image: none;
       }
     }
 
@@ -615,14 +597,12 @@
       .key.tap {
         animation:
           key-symbol-flash 0.28s ease-out,
-          key-press-surface 0.28s ease-out,
           mobile-key-outer-glow 0.28s ease-out;
       }
 
       body.browser-glow-boost .key.tap {
         animation:
           key-symbol-flash 0.32s ease-out,
-          key-press-surface 0.32s ease-out,
           browser-key-outer-glow 0.34s ease-out;
       }
     }
