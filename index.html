@@ -151,15 +151,15 @@
       line-height: 1.08;
       text-align: right;
       transform-origin: right center;
-      transition: font-size 0.12s ease;
+      font-variant-numeric: tabular-nums;
     }
 
     #amount.compact {
-      font-size: clamp(38px, 11vw, 54px);
+      font-size: clamp(30px, 8.2vw, 42px);
     }
 
     #amount.dense {
-      font-size: clamp(22px, 6.4vw, 34px);
+      font-size: clamp(21px, 6vw, 30px);
     }
 
     #amount.ultra {
@@ -183,7 +183,8 @@
       font-weight: 520;
       line-height: 1.12;
       overflow-wrap: anywhere;
-      transition: color 0.16s ease, text-shadow 0.16s ease, transform 0.16s ease, font-size 0.12s ease;
+      font-variant-numeric: tabular-nums;
+      transition: color 0.16s ease, text-shadow 0.16s ease, transform 0.16s ease;
     }
 
     .result.compact {
@@ -1016,7 +1017,7 @@
 
     function setResultText(text) {
       resultEl.textContent = text;
-      setNumberDensity(resultEl, countDigits(text));
+      setNumberDensity(resultEl, text.length);
       if (text !== lastResultText) {
         lastResultText = text;
         pulseResult();
@@ -1031,7 +1032,7 @@
       if (state.pendingValue !== null && state.operator) {
         const prefix = state.expressionText || `${formatNumber(state.pendingValue, 2)} ${state.operator}`;
         if (state.percentApplied || state.waitingForNext || !state.amount) return prefix;
-        return `${prefix} ${formatNumber(Number(state.amount), 2)}`;
+        return `${prefix} ${formatNumber(state.amount, 2)}`;
       }
 
       return state.expressionText || state.calcText;
@@ -1269,7 +1270,8 @@
       const previous = state.amount;
       state.amount = cleanDecimal(value);
       amountInput.value = shouldFormat ? formatInputNumber(state.amount) : formatInputNumber(state.amount);
-      setNumberDensity(amountInput, countDigits(state.amount));
+      setNumberDensity(amountInput, amountInput.value.length);
+      moveCursorToEnd(amountInput);
       if (state.amount !== previous) pulseAmount();
       calculate();
     }
@@ -1331,14 +1333,14 @@
       return (String(value).match(/\d/g) || []).length;
     }
 
-    function setNumberDensity(element, digitCount) {
+    function setNumberDensity(element, length) {
       element.classList.remove("compact", "dense", "ultra");
 
-      if (digitCount > 22) {
+      if (length > 28) {
         element.classList.add("ultra");
-      } else if (digitCount > 13) {
+      } else if (length > 18) {
         element.classList.add("dense");
-      } else if (digitCount > 8) {
+      } else if (length > 10) {
         element.classList.add("compact");
       }
     }
