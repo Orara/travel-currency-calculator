@@ -151,6 +151,19 @@
       line-height: 1.08;
       text-align: right;
       transform-origin: right center;
+      transition: font-size 0.12s ease;
+    }
+
+    #amount.compact {
+      font-size: clamp(38px, 11vw, 54px);
+    }
+
+    #amount.dense {
+      font-size: clamp(22px, 6.4vw, 34px);
+    }
+
+    #amount.ultra {
+      font-size: clamp(15px, 4.2vw, 22px);
     }
 
     #amount::placeholder {
@@ -170,7 +183,20 @@
       font-weight: 520;
       line-height: 1.12;
       overflow-wrap: anywhere;
-      transition: color 0.16s ease, text-shadow 0.16s ease, transform 0.16s ease;
+      transition: color 0.16s ease, text-shadow 0.16s ease, transform 0.16s ease, font-size 0.12s ease;
+    }
+
+    .result.compact {
+      font-size: clamp(26px, 7.8vw, 38px);
+    }
+
+    .result.dense {
+      font-size: clamp(18px, 5.2vw, 28px);
+    }
+
+    .result.ultra {
+      font-size: clamp(15px, 4.4vw, 22px);
+      line-height: 1.2;
     }
 
     .result.flash {
@@ -756,6 +782,7 @@
       THB: 45.4,
       USD: 1512
     };
+    const MAX_INPUT_DIGITS = 30;
 
     const CURRENCIES = {
       KRW: { name: "대한민국 원", symbol: "₩", decimals: 0 },
@@ -989,6 +1016,7 @@
 
     function setResultText(text) {
       resultEl.textContent = text;
+      setNumberDensity(resultEl, countDigits(text));
       if (text !== lastResultText) {
         lastResultText = text;
         pulseResult();
@@ -1241,6 +1269,7 @@
       const previous = state.amount;
       state.amount = cleanDecimal(value);
       amountInput.value = shouldFormat ? formatInputNumber(state.amount) : formatInputNumber(state.amount);
+      setNumberDensity(amountInput, countDigits(state.amount));
       if (state.amount !== previous) pulseAmount();
       calculate();
     }
@@ -1253,7 +1282,27 @@
     // 숫자와 소수점 하나만 허용해서 잘못된 입력을 줄입니다.
     function cleanDecimal(value) {
       const normalized = String(value).replace(/,/g, "").replace(/[^\d.]/g, "");
-      const parts = normalized.split(".");
+      let digitCount = 0;
+      let hasDecimal = false;
+      let limited = "";
+
+      for (const char of normalized) {
+        if (char === ".") {
+          if (hasDecimal) continue;
+          hasDecimal = true;
+          limited += char;
+          continue;
+        }
+
+        if (digitCount >= MAX_INPUT_DIGITS) continue;
+        digitCount += 1;
+        limited += char;
+      }
+
+      if (limited === ".") return "0.";
+      if (!limited) return "";
+
+      const parts = limited.split(".");
       if (parts.length === 1) return parts[0].replace(/^0+(?=\d)/, "");
       const intPart = parts[0].replace(/^0+(?=\d)/, "") || "0";
       return `${intPart}.${parts.slice(1).join("")}`;
@@ -1261,9 +1310,88 @@
 
     function formatInputNumber(value) {
       if (!value) return "";
+      return formatDecimalString(value);
+    }
+
+    function formatDecimalString(value, decimals = null) {
       const [intPart, decimalPart] = String(value).split(".");
-      const intText = intPart ? Number(intPart).toLocaleString("en-US") : "0";
-      return decimalPart !== undefined ? `${intText}.${decimalPart}` : intText;
+      const intText = groupIntegerString(intPart || "0");
+
+      if (decimalPart === undefined) return intText;
+      const decimalText = decimals === null ? decimalPart : decimalPart.slice(0, decimals);
+      return decimalText ? `${intText}.${decimalText}` : `${intText}.`;
+    }
+
+    function groupIntegerString(value) {
+      const normalized = String(value || "0").replace(/^0+(?=\d)/, "") || "0";
+      return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    function countDigits(value) {
+      return (String(value).match(/\d/g) || []).length;
+    }
+
+    function setNumberDensity(element, digitCount) {
+      element.classList.remove("compact", "dense", "ultra");
+
+      if (digitCount > 22) {
+        element.classList.add("ultra");
+      } else if (digitCount > 13) {
+        element.classList.add("dense");
+      } else if (digitCount > 8) {
+        element.classList.add("compact");
+      }
+    }
+
+    function decimalToRational(value) {
+      const clean = toPlainDecimal(value).replace(/,/g, "");
+      if (!clean || clean === ".") return null;
+
+      const [intPart, decimalPart = ""] = clean.split(".");
+      const digits = `${intPart || "0"}${decimalPart}`.replace(/^0+(?=\d)/, "") || "0";
+      return {
+        numerator: BigInt(digits),
+        scale: 10n ** BigInt(decimalPart.length)
+      };
+    }
+
+    function toPlainDecimal(value) {
+      const text = String(value);
+      if (!/e/i.test(text)) return text;
+
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "0";
+      return number.toLocaleString("en-US", {
+        useGrouping: false,
+        maximumFractionDigits: 20
+      });
+    }
+
+    function convertedAmountText(amount, fromRate, toRate, decimals) {
+      const amountRatio = decimalToRational(amount);
+      const fromRatio = decimalToRational(fromRate);
+      const toRatio = decimalToRational(toRate);
+
+      if (!amountRatio || !fromRatio || !toRatio || toRatio.numerator === 0n) return "0";
+
+      const numerator = amountRatio.numerator * fromRatio.numerator * toRatio.scale;
+      const denominator = amountRatio.scale * fromRatio.scale * toRatio.numerator;
+      return formatFraction(numerator, denominator, decimals);
+    }
+
+    function formatFraction(numerator, denominator, decimals) {
+      const scale = 10n ** BigInt(decimals);
+      const scaled = (numerator * scale + denominator / 2n) / denominator;
+
+      if (decimals === 0) return groupIntegerString(String(scaled));
+
+      const integer = scaled / scale;
+      const fraction = String(scaled % scale).padStart(decimals, "0").replace(/0+$/, "");
+      return fraction ? `${groupIntegerString(String(integer))}.${fraction}` : groupIntegerString(String(integer));
+    }
+
+    function formatNumberSafe(value, decimals) {
+      return formatNumber(value, decimals);
     }
 
     function updateCurrency(type, value) {
@@ -1288,9 +1416,9 @@
     }
 
     function calculate() {
-      const amount = Number(state.amount);
+      const amountRatio = decimalToRational(state.amount);
 
-      if (!state.amount || !Number.isFinite(amount)) {
+      if (!state.amount || !amountRatio || amountRatio.numerator === 0n) {
         updateExpression();
         setResultText(`${CURRENCIES[state.to].symbol}0`);
         formulaEl.textContent = "금액을 입력해 주세요.";
@@ -1299,22 +1427,29 @@
 
       const fromRate = state.rates[state.from];
       const toRate = state.rates[state.to];
-      const krwValue = amount * fromRate;
-      const converted = krwValue / toRate;
       const directRate = fromRate / toRate;
+      const convertedText = convertedAmountText(state.amount, fromRate, toRate, CURRENCIES[state.to].decimals);
 
       updateExpression();
-      setResultText(formatCurrency(converted, state.to));
-      formulaEl.textContent = `${formatNumber(amount, 2)} ${state.from} × ${formatNumber(directRate, 6)} = ${formatNumber(converted, CURRENCIES[state.to].decimals)} ${state.to}`;
+      setResultText(formatCurrency(convertedText, state.to));
+      formulaEl.textContent = `${formatNumber(state.amount, 2)} ${state.from} × ${formatNumber(directRate, 6)} = ${convertedText} ${state.to}`;
     }
 
     function formatCurrency(value, code) {
       const info = CURRENCIES[code];
+      if (typeof value === "string") return `${info.symbol}${value}`;
       return `${info.symbol}${formatNumber(value, info.decimals)}`;
     }
 
     function formatNumber(value, decimals) {
-      return Number(value).toLocaleString("en-US", {
+      if (typeof value === "string") {
+        return formatDecimalString(value, decimals).replace(/\.$/, "");
+      }
+
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "0";
+
+      return number.toLocaleString("en-US", {
         minimumFractionDigits: decimals === 0 ? 0 : 0,
         maximumFractionDigits: decimals
       });
