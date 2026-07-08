@@ -337,7 +337,7 @@
         box-shadow: 0 0 0 rgba(87, 224, 200, 0);
       }
       42% {
-        box-shadow: 0 0 18px 5px rgba(87, 224, 200, 0.24);
+        box-shadow: 0 0 22px 6px rgba(87, 224, 200, 0.24);
       }
       100% {
         box-shadow: 0 0 0 rgba(87, 224, 200, 0);
@@ -889,7 +889,7 @@
     function createFloatingHalo(button) {
       const rect = button.getBoundingClientRect();
       const halo = document.createElement("span");
-      const size = Math.round(rect.width + 30);
+      const size = Math.round(rect.width + 36);
       halo.className = "touch-halo";
       halo.style.setProperty("--halo-size", `${size}px`);
       halo.style.setProperty("--halo-left", `${Math.round(rect.left + rect.width / 2 - size / 2)}px`);
