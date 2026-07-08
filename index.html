@@ -230,11 +230,15 @@
     }
 
     .key {
+      --key-bg: var(--key);
       aspect-ratio: 1 / 1;
       width: 64px;
       border-radius: 50%;
       color: var(--text);
-      background: var(--key);
+      background:
+        radial-gradient(circle at 64% 14%, rgba(238, 255, 251, 0.13) 0%, rgba(111, 238, 215, 0.08) 22%, rgba(111, 238, 215, 0) 42%),
+        conic-gradient(from 314deg, rgba(87, 224, 200, 0) 0deg, rgba(87, 224, 200, 0.16) 28deg, rgba(238, 255, 251, 0.12) 48deg, rgba(87, 224, 200, 0) 76deg),
+        var(--key-bg);
       font-size: clamp(25px, 7.8vw, 34px);
       font-weight: 390;
       line-height: 1;
@@ -365,20 +369,20 @@
 
     .key.fn {
       color: #ff7474;
-      background: var(--key);
+      --key-bg: var(--key);
       font-size: clamp(19px, 5.6vw, 25px);
       font-weight: 560;
     }
 
     .key.operator {
-      background: var(--key-fn);
+      --key-bg: var(--key-fn);
       color: #e6e6e8;
       font-size: clamp(28px, 8vw, 36px);
       font-weight: 430;
     }
 
     .key.equal {
-      background: var(--accent);
+      --key-bg: linear-gradient(145deg, #34c8b4 0%, var(--accent) 46%, var(--accent-dark) 100%);
       color: white;
       font-size: clamp(30px, 8.4vw, 38px);
       font-weight: 520;
