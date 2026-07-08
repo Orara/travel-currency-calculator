@@ -285,11 +285,12 @@
       z-index: 1;
       background:
         radial-gradient(circle,
-          rgba(255, 255, 255, 0.18) 0%,
-          rgba(87, 224, 200, 0.18) 43%,
-          rgba(87, 224, 200, 0.07) 62%,
-          rgba(87, 224, 200, 0) 78%);
-      filter: blur(0.2px);
+          rgba(238, 255, 251, 0.2) 0%,
+          rgba(111, 238, 215, 0.2) 34%,
+          rgba(48, 196, 177, 0.13) 54%,
+          rgba(32, 160, 148, 0.05) 68%,
+          rgba(32, 160, 148, 0) 80%);
+      filter: blur(0.25px);
       animation: floating-key-halo 0.28s ease-out forwards;
       will-change: transform, opacity;
     }
@@ -337,7 +338,10 @@
         box-shadow: 0 0 0 rgba(87, 224, 200, 0);
       }
       42% {
-        box-shadow: 0 0 22px 6px rgba(87, 224, 200, 0.24);
+        box-shadow:
+          0 0 14px 3px rgba(238, 255, 251, 0.14),
+          0 0 22px 6px rgba(87, 224, 200, 0.24),
+          0 0 30px 8px rgba(33, 160, 148, 0.12);
       }
       100% {
         box-shadow: 0 0 0 rgba(87, 224, 200, 0);
