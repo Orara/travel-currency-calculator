@@ -145,13 +145,16 @@
       outline: 0;
       color: var(--text);
       background: transparent;
+      display: block;
       font-size: clamp(54px, 16vw, 74px);
       font-weight: 360;
       letter-spacing: 0;
       line-height: 1.08;
+      overflow: visible;
       text-align: right;
       transform-origin: right center;
       font-variant-numeric: tabular-nums;
+      white-space: nowrap;
     }
 
     #amount.compact {
@@ -164,11 +167,6 @@
 
     #amount.ultra {
       font-size: clamp(15px, 4.2vw, 22px);
-    }
-
-    #amount::placeholder {
-      color: var(--text);
-      opacity: 1;
     }
 
     #amount.amount-pop {
@@ -705,7 +703,7 @@
         <p class="expression" id="expression"></p>
         <div class="amount-line">
           <span class="currency-symbol" id="fromSymbol">₩</span>
-          <input id="amount" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="변환할 금액" />
+          <div id="amount" role="text" aria-label="변환할 금액">0</div>
         </div>
         <p class="result" id="result">₫0</p>
         <p class="formula" id="formula">금액을 입력해 주세요.</p>
@@ -892,7 +890,6 @@
     }
 
     function bindEvents() {
-      amountInput.addEventListener("input", handleTypedAmount);
       fromSelect.addEventListener("change", () => updateCurrency("from", fromSelect.value));
       toSelect.addEventListener("change", () => updateCurrency("to", toSelect.value));
 
@@ -1036,17 +1033,6 @@
       }
 
       return state.expressionText || state.calcText;
-    }
-
-    function handleTypedAmount() {
-      state.pendingValue = null;
-      state.operator = null;
-      state.waitingForNext = false;
-      state.calcText = "";
-      state.expressionText = "";
-      state.percentApplied = false;
-      setAmount(cleanDecimal(amountInput.value), false);
-      moveCursorToEnd(amountInput);
     }
 
     function appendKey(key) {
@@ -1253,7 +1239,7 @@
       state.waitingForNext = true;
       state.percentApplied = false;
       state.amount = "";
-      amountInput.value = "";
+      amountInput.textContent = "0";
       updateExpression();
       setResultText("오류");
       formulaEl.textContent = "0으로 나눌 수 없습니다.";
@@ -1269,9 +1255,8 @@
     function setAmount(value, shouldFormat = true) {
       const previous = state.amount;
       state.amount = cleanDecimal(value);
-      amountInput.value = shouldFormat ? formatInputNumber(state.amount) : formatInputNumber(state.amount);
-      setNumberDensity(amountInput, amountInput.value.length);
-      moveCursorToEnd(amountInput);
+      amountInput.textContent = state.amount ? formatInputNumber(state.amount) : "0";
+      setNumberDensity(amountInput, amountInput.textContent.length);
       if (state.amount !== previous) pulseAmount();
       calculate();
     }
@@ -1336,11 +1321,11 @@
     function setNumberDensity(element, length) {
       element.classList.remove("compact", "dense", "ultra");
 
-      if (length > 28) {
+      if (length > 27) {
         element.classList.add("ultra");
-      } else if (length > 18) {
+      } else if (length > 17) {
         element.classList.add("dense");
-      } else if (length > 10) {
+      } else if (length > 9) {
         element.classList.add("compact");
       }
     }
@@ -1494,13 +1479,6 @@
       saveState();
       calculate();
       rateError.textContent = "기본 환율로 초기화되었습니다.";
-    }
-
-    function moveCursorToEnd(input) {
-      requestAnimationFrame(() => {
-        const end = input.value.length;
-        input.setSelectionRange(end, end);
-      });
     }
 
     init();
