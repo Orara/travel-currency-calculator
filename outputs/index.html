@@ -917,26 +917,34 @@
         if (event.target === modal) closeSettings();
       });
 
+      amountInput.addEventListener("animationend", () => {
+        amountInput.classList.remove("amount-pop");
+      });
+
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && modal.classList.contains("open")) closeSettings();
       });
     }
 
     function onPress(element, handler) {
-      let lastPointerAt = 0;
+      let skipNextClick = false;
 
       if (window.PointerEvent) {
         element.addEventListener("pointerdown", (event) => {
           if (event.pointerType === "mouse" && event.button !== 0) return;
           event.preventDefault();
-          lastPointerAt = performance.now();
+          skipNextClick = true;
           handler(event);
         });
       }
 
       element.addEventListener("click", (event) => {
-        const recentlyHandledByPointer = performance.now() - lastPointerAt < 700;
-        if (recentlyHandledByPointer) return;
+        if (skipNextClick) {
+          skipNextClick = false;
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
         handler(event);
       });
     }
