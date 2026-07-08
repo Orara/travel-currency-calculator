@@ -348,6 +348,21 @@
       }
     }
 
+    @keyframes browser-key-outer-glow {
+      0% {
+        box-shadow: 0 0 0 rgba(87, 224, 200, 0);
+      }
+      42% {
+        box-shadow:
+          0 0 16px 4px rgba(238, 255, 251, 0.17),
+          0 0 27px 8px rgba(87, 224, 200, 0.3),
+          0 0 38px 10px rgba(33, 160, 148, 0.16);
+      }
+      100% {
+        box-shadow: 0 0 0 rgba(87, 224, 200, 0);
+      }
+    }
+
     .key.fn {
       color: #ff7474;
       background: var(--key);
@@ -585,6 +600,12 @@
           key-symbol-flash 0.28s ease-out,
           mobile-key-outer-glow 0.28s ease-out;
       }
+
+      body.browser-glow-boost .key.tap {
+        animation:
+          key-symbol-flash 0.28s ease-out,
+          browser-key-outer-glow 0.28s ease-out;
+      }
     }
 
     @media (min-width: 700px) {
@@ -751,12 +772,22 @@
     let lastResultText = "";
 
     function init() {
+      detectBrowserGlowMode();
       loadState();
       renderCurrencyOptions();
       renderRateInputs();
       bindEvents();
       syncControls();
       calculate();
+    }
+
+    function detectBrowserGlowMode() {
+      const ua = navigator.userAgent || "";
+      const isKakaoTalk = /KAKAOTALK/i.test(ua);
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+      const isMobileView = window.matchMedia("(max-width: 700px)").matches || window.matchMedia("(pointer: coarse)").matches;
+      document.body.classList.toggle("kakao-webview", isKakaoTalk);
+      document.body.classList.toggle("browser-glow-boost", !isKakaoTalk && (isMobileView || isStandalone));
     }
 
     function loadState() {
@@ -893,7 +924,8 @@
     function createFloatingHalo(button) {
       const rect = button.getBoundingClientRect();
       const halo = document.createElement("span");
-      const size = Math.round(rect.width + 36);
+      const extra = document.body.classList.contains("browser-glow-boost") ? 44 : 36;
+      const size = Math.round(rect.width + extra);
       halo.className = "touch-halo";
       halo.style.setProperty("--halo-size", `${size}px`);
       halo.style.setProperty("--halo-left", `${Math.round(rect.left + rect.width / 2 - size / 2)}px`);
