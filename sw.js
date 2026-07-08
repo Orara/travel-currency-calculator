@@ -1,4 +1,4 @@
-const CACHE_NAME = "travel-currency-calculator-v17";
+const CACHE_NAME = "travel-currency-calculator-v18";
 const APP_ASSETS = [
   "./",
   "./index.html",
