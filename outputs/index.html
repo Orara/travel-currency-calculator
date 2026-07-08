@@ -929,14 +929,14 @@
         element.addEventListener("pointerdown", (event) => {
           if (event.pointerType === "mouse" && event.button !== 0) return;
           event.preventDefault();
-          lastPointerAt = Date.now();
+          lastPointerAt = performance.now();
           handler(event);
         });
       }
 
       element.addEventListener("click", (event) => {
-        const recentlyHandledByPointer = Date.now() - lastPointerAt < 500;
-        if (recentlyHandledByPointer && event.detail !== 0) return;
+        const recentlyHandledByPointer = performance.now() - lastPointerAt < 700;
+        if (recentlyHandledByPointer) return;
         handler(event);
       });
     }
